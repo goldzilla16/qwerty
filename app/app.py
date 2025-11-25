@@ -163,7 +163,7 @@ def delete_task(task_id):
 
     if not task:
         return jsonify({
-            "error": "Task not found",
+            "error": "error found",
             "task_id": task_id
         }), 404
 
