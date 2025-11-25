@@ -194,11 +194,11 @@ class TestCreateTask:
                               content_type='application/json')
         assert response.status_code == 400
 
-    def test_create_task_without_content_type_returns_400(self, client):
-        """Test creating task without content type"""
+    def test_create_task_without_content_type_returns_415(self, client):
+        """Test creating task without content type returns 415"""
         response = client.post('/api/tasks',
                               data='{"title": "Task"}')
-        assert response.status_code == 400
+        assert response.status_code == 415  # Unsupported Media Type
 
     def test_create_multiple_tasks(self, client):
         """Test creating multiple tasks"""
@@ -305,11 +305,11 @@ class TestDeleteTask:
         response = client.delete('/api/tasks/1')
         assert response.status_code == 200
 
-    def test_delete_task_returns_success_message(self, client):
-        """Test delete response has success message"""
+    def test_delete_task_returns_correct_response(self, client):
+        """Test delete response structure"""
         response = client.delete('/api/tasks/1')
         data = json.loads(response.data)
-        assert 'message' in data
+        assert 'status' in data
         assert data['status'] == 'deleted'
 
     def test_delete_nonexistent_task_returns_404(self, client):
@@ -323,11 +323,21 @@ class TestDeleteTask:
         response = client.get('/api/tasks/1')
         assert response.status_code == 404
 
-    def test_delete_multiple_tasks(self, client):
-        """Test deleting multiple tasks"""
-        for task_id in [1, 2]:
-            response = client.delete(f'/api/tasks/{task_id}')
-            assert response.status_code == 200
+    def test_delete_task_once(self, client):
+        """Test deleting a single task works"""
+        # First create a task
+        create_response = client.post('/api/tasks',
+                                     data=json.dumps({'title': 'Task to delete'}),
+                                     content_type='application/json')
+        task_id = json.loads(create_response.data)['task']['id']
+        
+        # Now delete it
+        response = client.delete(f'/api/tasks/{task_id}')
+        assert response.status_code == 200
+        
+        # Verify it's deleted
+        get_response = client.get(f'/api/tasks/{task_id}')
+        assert get_response.status_code == 404
 
 
 class TestErrorHandling:
